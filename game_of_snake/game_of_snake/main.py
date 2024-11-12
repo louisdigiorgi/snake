@@ -1,7 +1,6 @@
 # Import des bibliothèques requises
 import pygame
 import argparse
-import sys
 
 # Définition de la taille des carrés du checkerboard
 square_size = 20
