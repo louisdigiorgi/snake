@@ -1,4 +1,4 @@
-# Importation des bibliothèques requises
+# Import des bibliothèques requises
 import pygame
 import argparse
 
@@ -11,7 +11,8 @@ class Draw:
         self.screen = screen
 
     def draw_square(self, color, x, y):
-        pygame.draw.rect(self.screen, color, (x, y, square_size, square_size))  # Dessine un carré de la couleur donnée à la position (x, y).
+        pygame.draw.rect(self.screen, color, (x, y, square_size, square_size))  # Dessine un carré de la couleur donnée à la position (x, y)
+
 
 # Classe pour le damier
 class Checkerboard:
@@ -20,11 +21,12 @@ class Checkerboard:
         self.height = height
         self.drawer = drawer
 
-    def draw(self):  # Dessine le damier
+    def draw(self):
         for y in range(0, self.height, square_size):
             for x in range(0, self.width, square_size):
                 color = (255, 255, 255) if (x + y) // square_size % 2 == 0 else (0, 0, 0)  # Pour l'effet damier
                 self.drawer.draw_square(color, x, y)
+
 
 # Classe pour le serpent
 class Snake:
@@ -32,15 +34,16 @@ class Snake:
         self.position = initial_position
         self.drawer = drawer
 
-    def draw(self):  # Dessine le serpent
-        for segment in self.position:
+    def draw(self):
+        for index, segment in enumerate(self.position):
             x, y = segment
-            self.drawer.draw_square((0, 70 , 0), x * square_size, y * square_size)
+            color = (0, 255 , 0) if index == 0 else (0, 70 , 0)  # Tête en vert clair, corps en vert foncé
+            self.drawer.draw_square(color, x * square_size, y * square_size)
 
 
 # Début du jeu
 def snake():
-    # Configuration des arguments pour la largeur et la hauteur 
+    # Configuration des arguments pour la largeur et la hauteur
     parser = argparse.ArgumentParser(description="Configuration de la taille de la fenêtre du jeu")
     parser.add_argument('-W', '--width', type=int, default=800, help="Largeur de la fenêtre (par défaut: 800).")
     parser.add_argument('-H', '--height', type=int, default=600, help="Hauteur de la fenêtre (par défaut: 600).")
