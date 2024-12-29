@@ -4,6 +4,10 @@ import random
 import abc
 import enum
 from typing import List, Iterator, Tuple, TypedDict, final
+import re
+
+FPS_MIN = 3
+FPS_MAX = 15
 
 # Define a structure for the window size using TypedDict
 class WindowSize(TypedDict):
@@ -122,7 +126,6 @@ class GameObject(Subject):
         return any(t.row == tile.row and t.column == tile.column for t in self.tiles)
 
 # Tile class represents individual cells on the board
-@final
 class Tile:
     def __init__(self, row: int, column: int, color: Tuple[int, int, int]) -> None:
         self._row = row
@@ -167,38 +170,43 @@ class CheckerBoard(GameObject):
 class Snake(GameObject):
     def __init__(self, positions: List[Tuple[int, int]], color: Tuple[int, int, int], direction: Dir) -> None:
         super().__init__()
-        # Initialize the snake's body as a list of tiles
         self._tiles: List[Tile] = [Tile(p[0], p[1], color) for p in positions]
-        self._color: Tuple[int, int, int] = color  # Snake's color
-        self._direction: Dir = direction  # Snake's initial direction
+        self._color: Tuple[int, int, int] = color
+        self._direction: Dir = direction
 
     @property
     def dir(self) -> Dir:
-        # Get the current direction of the snake
         return self._direction
 
     @dir.setter
     def dir(self, new_direction: Dir) -> None:
-        # Set the new direction for the snake
         self._direction = new_direction
 
     def __len__(self) -> int:
-        # Return the length of the snake (number of tiles)
         return len(self._tiles)
 
-    def move(self) -> None:
-        # Move the snake in the current direction
-        self._tiles.insert(0, self._tiles[0] + self._direction)  # Add a new head
+    def move(self, width: int, height: int) -> None:
+        # Calculate the new head position
+        new_head = self._tiles[0] + self._direction
+
+        # Check if the snake slithers on itself
+        if any(tile.row == new_head.row and tile.column == new_head.column for tile in self._tiles):
+            raise GameOver("The snake slithered on itself.")
+
+        # Check if the snake exits the board
+        if not (0 <= new_head.row < height and 0 <= new_head.column < width):
+            raise GameOver("The snake exited the board.")
+
+        # Move the snake
+        self._tiles.insert(0, new_head)  # Add the new head
         self._tiles.pop()  # Remove the tail
-        self.notify_observers("notify_object_moved", self)  # Notify observers about the move
+        self.notify_observers("notify_object_moved", self)
 
     def grow(self) -> None:
-        # Grow the snake by adding a tile at the tail
         self._tiles.append(self._tiles[-1])
 
     @property
     def tiles(self) -> Iterator[Tile]:
-        # Return an iterator over the snake's tiles
         return iter(self._tiles)
 
 # Fruit class represents a fruit on the board
@@ -213,71 +221,134 @@ class Fruit(GameObject):
         # Return an iterator over the fruit's tiles
         return iter(self._tiles)
 
-# Function to parse window size from command-line arguments
+# Function to parse window size from command-line arguments, changer le nom
 def windowsize() -> WindowSize:
-    DEFAULT_WIDTH = 20  # Default width in tiles
-    DEFAULT_HEIGHT = 15  # Default height in tiles
+    DEFAULT_WIDTH = 20
+    DEFAULT_HEIGHT = 15
+    DEFAULT_TILE_SIZE = 20
+    DEFAULT_FPS = 10
 
-    parser = argparse.ArgumentParser(description='Window size with numbers of tiles.')
-    parser.add_argument('-w', '--width', type=int, default=DEFAULT_WIDTH, help="Width in tiles.")
-    parser.add_argument('-e', '--height', type=int, default=DEFAULT_HEIGHT, help="Height in tiles.")
+    parser = argparse.ArgumentParser(description='Configure game parameters.')
+    parser.add_argument('-w', '--width', type=int, default=DEFAULT_WIDTH,
+                        help="Width of the game board in tiles (minimum: 20).")
+    parser.add_argument('-e', '--height', type=int, default=DEFAULT_HEIGHT,
+                        help="Height of the game board in tiles (minimum: 15).")
+    parser.add_argument('--tile-size', type=int, default=DEFAULT_TILE_SIZE,
+                        help="Size of each tile in pixels (minimum: 10, maximum: 100).")
+    parser.add_argument('--fps', type=int, default=DEFAULT_FPS,
+                        help="Frames per second (minimum: 3, maximum: 60).")
+    parser.add_argument('--fruit-color', type=str, default='#FF0000',
+                        help="Hexadecimal color code for the fruit (e.g., #FF0000).")
+    parser.add_argument('--gameover-on-exit', action='store_true',
+                        help="End the game if the snake exits the board.")
     args = parser.parse_args()
 
-    return {"width": args.width, "height": args.height}
+    # Validate arguments
+    if args.width < 20:
+        raise IntRangeError("width", args.width, 20, float('inf'))
+    if args.height < 15:
+        raise IntRangeError("height", args.height, 15, float('inf'))
+    if not (10 <= args.tile_size <= 100):
+        raise IntRangeError("tile-size", args.tile_size, 10, 100)
+    if not (3 <= args.fps <= 60):
+        raise IntRangeError("fps", args.fps, 3, 60)
+    if not re.match(r'^#[0-9A-Fa-f]{6}$', args.fruit_color):
+        raise ColorError(args.fruit_color, "fruit-color")
+
+    return {
+        "width": args.width,
+        "height": args.height,
+        "tile_size": args.tile_size,
+        "fps": args.fps,
+        "fruit_color": args.fruit_color,
+        "gameover_on_exit": args.gameover_on_exit
+    }
+
+
+
+
+class SnakeException(Exception):
+    def __init__(self, message : str)-> None:
+        super().__init__(message)
+
+class SnakeError(SnakeException):
+    def __init__(self, message : str)-> None:
+        super().__init__(message)
+
+class IntRangeError(SnakeError):
+    def __init__(self, name : str, value : int, Vmin : int, Vmax : int)-> None:
+        super().__init__(f"Value {value} of {name} is not between {Vmin} and {Vmax}.")
+
+class ColorError(SnakeError):
+    def __init__(self, color : str, name : str)-> None:
+        super().__init__(f'wrong color {color} for {name}')
+
+class GameOver(SnakeException):
+    def __init__(self, message : str)-> None:
+        super().__init__(message)
+
+
+
+
 
 # Main game function
 def game() -> None:
-    DEFAULT_TILE_SIZE = 20  # Size of each tile in pixels
-    DEFAULT_STARTING_SNAKE = [(10, 7), (10, 6), (10, 5)]  # Initial snake position
-    DEFAULT_DIRECTION = Dir.RIGHT  # Initial snake direction
+    DEFAULT_STARTING_SNAKE = [(10, 7), (10, 6), (10, 5)]
+    DEFAULT_DIRECTION = Dir.RIGHT
 
     # Initialize the game window
-    size = windowsize()
+    args = {
+        "width": 20,
+        "height": 15,
+        "tile_size": 20,
+        "fps": 10,
+        "fruit_color": (255, 0, 0),
+    }
+
     pygame.init()
-    screen = pygame.display.set_mode((size["width"] * DEFAULT_TILE_SIZE, size["height"] * DEFAULT_TILE_SIZE))
-    clock = pygame.time.Clock()
-    pygame.display.set_caption("Snake - score : 0")
+    try:
+        screen = pygame.display.set_mode(
+            (args["width"] * args["tile_size"], args["height"] * args["tile_size"])
+        )
+        clock = pygame.time.Clock()
+        pygame.display.set_caption("Snake - score : 0")
 
-    # Create game objects
-    board = Board(screen=screen, tile_size=DEFAULT_TILE_SIZE)
-    checkerboard = CheckerBoard(size, (0, 0, 0), (255, 255, 255))
-    snake = Snake(DEFAULT_STARTING_SNAKE, (0, 255, 0), DEFAULT_DIRECTION)
-    fruit = Fruit((3, 3), (255, 0, 0))
-    board.add_object(checkerboard)
-    board.add_object(snake)
-    board.add_object(fruit)
+        board = Board(screen=screen, tile_size=args["tile_size"])
+        checkerboard = CheckerBoard(
+            {"width": args["width"], "height": args["height"]},
+            (0, 0, 0), (255, 255, 255)
+        )
+        snake = Snake(DEFAULT_STARTING_SNAKE, (0, 255, 0), DEFAULT_DIRECTION)
+        fruit = Fruit((3, 3), args["fruit_color"])
+        board.add_object(checkerboard)
+        board.add_object(snake)
+        board.add_object(fruit)
 
-    # Main game loop
-    game_running = True
-    while game_running:
-        clock.tick(5)  # Control game speed (frames per second)
+        game_running = True
+        while game_running:
+            clock.tick(args["fps"])
 
-        # Handle events
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                game_running = False
-
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_q:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
                     game_running = False
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_UP and snake.dir != Dir.DOWN:
+                        snake.dir = Dir.UP
+                    elif event.key == pygame.K_DOWN and snake.dir != Dir.UP:
+                        snake.dir = Dir.DOWN
+                    elif event.key == pygame.K_RIGHT and snake.dir != Dir.LEFT:
+                        snake.dir = Dir.RIGHT
+                    elif event.key == pygame.K_LEFT and snake.dir != Dir.RIGHT:
+                        snake.dir = Dir.LEFT
 
-                # Change the snake's direction based on arrow keys
-                elif event.key == pygame.K_UP and snake.dir != Dir.DOWN:
-                    snake.dir = Dir.UP
-                elif event.key == pygame.K_DOWN and snake.dir != Dir.UP:
-                    snake.dir = Dir.DOWN
-                elif event.key == pygame.K_RIGHT and snake.dir != Dir.LEFT:
-                    snake.dir = Dir.RIGHT
-                elif event.key == pygame.K_LEFT and snake.dir != Dir.RIGHT:
-                    snake.dir = Dir.LEFT
-
-        # Update game state
-        snake.move()
-        board.draw()
-        pygame.display.set_caption(f"Snake - score : {len(snake) - 3}")  # Update score
-        pygame.display.update()
-
-    # Cleanup and exit
-    pygame.quit()
-    import sys
-    sys.exit(0)
+            try:
+                snake.move(args["width"], args["height"])
+                board.draw()
+                pygame.display.set_caption(f"Snake - score : {len(snake) - 3}")
+                pygame.display.update()
+            except GameOver as e:
+                print(e)  # Print "Game Over" message
+                game_running = False
+    finally:
+        pygame.quit()
+        print("Game Over!")
