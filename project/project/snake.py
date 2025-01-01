@@ -2,10 +2,12 @@ from typing import List, Tuple, Iterator
 from .tile import Tile
 from .direction import Dir
 from .exceptions import GameOver
+from .game_object import GameObject  # Import GameObject correctly
 
 
-class Snake:
+class Snake(GameObject):
     def __init__(self, positions: List[Tuple[int, int]], color: Tuple[int, int, int], direction: Dir) -> None:
+        super().__init__()
         self._tiles: List[Tile] = [Tile(p[0], p[1], color) for p in positions]
         self._color: Tuple[int, int, int] = color
         self._direction: Dir = direction
@@ -33,14 +35,13 @@ class Snake:
         if not (0 <= new_head.row < height and 0 <= new_head.column < width):
             raise GameOver("The snake exited the board.")
 
-        # Add the new head and remove the tail
+        # Move the snake
         self._tiles.insert(0, new_head)  # Add the new head
         self._tiles.pop()  # Remove the tail
-
+        self.notify_observers("notify_object_moved", self)
 
     def grow(self) -> None:
-        self._tiles.append(self._tiles[-1])  # Add a new tile at the tail
-
+        self._tiles.append(self._tiles[-1])
 
     @property
     def tiles(self) -> Iterator[Tile]:

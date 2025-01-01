@@ -7,9 +7,17 @@ from .exceptions import GameOver
 from .utils import windowsize
 
 def game() -> None:
-    # Initialize the game as before
-    args = windowsize()
-    print(f"Game initialized with args: {args}")  # Debugging
+    DEFAULT_STARTING_SNAKE = [(10, 7), (10, 6), (10, 5)]
+    DEFAULT_DIRECTION = Dir.RIGHT
+
+    # Initialize the game window
+    args = {
+        "width": 20,
+        "height": 15,
+        "tile_size": 20,
+        "fps": 10,
+        "fruit_color": (255, 0, 0),
+    }
 
     pygame.init()
     try:
@@ -24,9 +32,8 @@ def game() -> None:
             {"width": args["width"], "height": args["height"]},
             (0, 0, 0), (255, 255, 255)
         )
-        snake = Snake([(10, 7), (10, 6), (10, 5)], (0, 255, 0), Dir.RIGHT)
-        fruit = Fruit((3, 3), tuple(int(args["fruit_color"].lstrip("#")[i:i+2], 16) for i in (0, 2, 4)))
-
+        snake = Snake(DEFAULT_STARTING_SNAKE, (0, 255, 0), DEFAULT_DIRECTION)
+        fruit = Fruit((3, 3), args["fruit_color"])
         board.add_object(checkerboard)
         board.add_object(snake)
         board.add_object(fruit)
@@ -49,14 +56,12 @@ def game() -> None:
                         snake.dir = Dir.LEFT
 
             try:
-                print(f"Snake tiles: {[tile for tile in snake.tiles]}")  # Debugging
-                print(f"Fruit tiles: {[tile for tile in fruit.tiles]}")  # Debugging
                 snake.move(args["width"], args["height"])
                 board.draw()
                 pygame.display.set_caption(f"Snake - score : {len(snake) - 3}")
                 pygame.display.update()
             except GameOver as e:
-                print(e)
+                print(e)  # Print "Game Over" message
                 game_running = False
     finally:
         pygame.quit()

@@ -1,16 +1,19 @@
 class SnakeException(Exception):
-    pass
-
+    def __init__(self, message : str)-> None:
+        super().__init__(message)
 
 class GameOver(SnakeException):
-    pass
+    def __init__(self, message : str)-> None:
+        super().__init__(message)
 
+class SnakeError(SnakeException):
+    def __init__(self, message : str)-> None:
+        super().__init__(message)
 
-class IntRangeError(SnakeException):
-    def __init__(self, name: str, value: int, Vmin: int, Vmax: int) -> None:
+class IntRangeError(SnakeError):
+    def __init__(self, name : str, value : int, Vmin : int, Vmax : int)-> None:
         super().__init__(f"Value {value} of {name} is not between {Vmin} and {Vmax}.")
 
-
-class ColorError(SnakeException):
-    def __init__(self, color: str, name: str) -> None:
-        super().__init__(f"Wrong color {color} for {name}")
+class ColorError(SnakeError):
+    def __init__(self, color : str, name : str)-> None:
+        super().__init__(f'wrong color {color} for {name}')
