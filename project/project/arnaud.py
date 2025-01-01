@@ -1,31 +1,36 @@
+import pygame
 from .board import Board, CheckerBoard
 from .snake import Snake
 from .fruit import Fruit
-from .tile import Tile
 from .direction import Dir
 from .exceptions import GameOver
-from .utils import WindowSize
-import pygame
+from .utils import windowsize
 
 def game() -> None:
-    args = WindowSize()  # Parse command-line arguments
+    # Initialize the game as before
+    args = windowsize()
+    print(f"Game initialized with args: {args}")  # Debugging
 
-    print(f"Args in game(): {args}")  # Debugging line
     pygame.init()
-
     try:
         screen = pygame.display.set_mode(
             (args["width"] * args["tile_size"], args["height"] * args["tile_size"])
         )
         clock = pygame.time.Clock()
         pygame.display.set_caption("Snake - score : 0")
-        board = Board(screen, args["tile_size"])
+
+        board = Board(screen=screen, tile_size=args["tile_size"])
+        checkerboard = CheckerBoard(
+            {"width": args["width"], "height": args["height"]},
+            (0, 0, 0), (255, 255, 255)
+        )
         snake = Snake([(10, 7), (10, 6), (10, 5)], (0, 255, 0), Dir.RIGHT)
-        fruit = Fruit((3, 3), args["fruit_color"])
+        fruit = Fruit((3, 3), tuple(int(args["fruit_color"].lstrip("#")[i:i+2], 16) for i in (0, 2, 4)))
+
+        board.add_object(checkerboard)
         board.add_object(snake)
         board.add_object(fruit)
 
-        # Main game loop
         game_running = True
         while game_running:
             clock.tick(args["fps"])
@@ -44,8 +49,11 @@ def game() -> None:
                         snake.dir = Dir.LEFT
 
             try:
+                print(f"Snake tiles: {[tile for tile in snake.tiles]}")  # Debugging
+                print(f"Fruit tiles: {[tile for tile in fruit.tiles]}")  # Debugging
                 snake.move(args["width"], args["height"])
                 board.draw()
+                pygame.display.set_caption(f"Snake - score : {len(snake) - 3}")
                 pygame.display.update()
             except GameOver as e:
                 print(e)
@@ -53,6 +61,3 @@ def game() -> None:
     finally:
         pygame.quit()
         print("Game Over!")
-
-if __name__ == "__main__":
-    game()
