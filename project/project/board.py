@@ -1,69 +1,86 @@
-from typing import List, Tuple, Iterator
-from .observer import Subject, Observer
-from .tile import Tile
-from .fruit import Fruit
-from .game_object import GameObject  # Import GameObject correctly
-from .snake import Snake
-from .utils import WindowSize  # Import WindowSize from utils
+# Standard
+import typing
+
+# Third party
 import pygame
-import random
+
+# First party
+from .fruit import Fruit
+from .game_object import GameObject
+from .observer import Observer
+from .subject import Subject
 
 
 class Board(Subject, Observer):
-    def __init__(self, screen: pygame.Surface, tile_size: int) -> None:
-        super().__init__()
-        self._screen = screen  # Pygame screen object
-        self._tile_size = tile_size  # Size of each tile in pixels
-        self._objects: List[GameObject] = []  # List of all game objects on the board
+    """Main class that handles all game objects."""
 
-    # Draw all objects on the screen
+    def __init__(self, screen: pygame.Surface, nb_lines: int, nb_cols: int,
+                 tile_size: int) -> None:
+        """Object initialization."""
+        super().__init__()
+        self._screen = screen
+        self._nb_lines = nb_lines
+        self._nb_cols = nb_cols
+        self._tile_size = tile_size
+        self._objects: list[GameObject] = []
+
+    def add_object(self, obj: GameObject) -> None:
+        """Add an object to the board."""
+        # Add object if not already there
+        if obj not in self._objects:
+            self._objects.append(obj)
+            obj.attach_obs(self)
+
+    def remove_object(self, obj: GameObject) -> None:
+        """Remove an object from the board."""
+        # Add object if not already there
+        if obj in self._objects:
+            self._objects.remove(obj)
+            obj.detach_obs(self)
+
+    def create_fruit(self) -> None:
+        """Create a random fruit."""
+        fruit = None
+        while fruit is None or list(self.collides(fruit)):
+            fruit = Fruit.create_random(self._nb_lines, self._nb_cols)
+        self.add_object(fruit)
+
     def draw(self) -> None:
+        """Draw all objects on screen."""
+        # Loop on all objects
         for obj in self._objects:
+
+            # Loop on all object's tiles
             for tile in obj.tiles:
                 tile.draw(self._screen, self._tile_size)
 
-    # Add a game object to the board
-    def add_object(self, gameobject: 'GameObject') -> None:
-        self._objects.append(gameobject)
-        if isinstance(gameobject, Subject):
-            gameobject.attach_obs(self)
-
-    # Handle movement notifications
-    def notify_object_moved(self, obj: 'GameObject') -> None:
-        for other in self._objects:
-            if other is not obj:
-                # Check if the object's tiles overlap with another object's tiles
-                for tile in obj.tiles:
-                    if tile in other:
-                        if isinstance(other, Fruit):
-                            self.notify_object_eaten(other)
-
-    # Handle notifications when an object is eaten
-    def notify_object_eaten(self, obj: 'GameObject') -> None:
+    def notify_object_eaten(self, obj: GameObject) -> None:
+        """Notify that the fruit has been eaten."""
         if isinstance(obj, Fruit):
-            self._objects.remove(obj)
-            snake = next((o for o in self._objects if isinstance(o, Snake)), None)
-            if snake is None:
-                raise ValueError("No Snake object found in the board.")
-            snake.grow()
-            new_position = (
-                random.randint(0, self._screen.get_height() // self._tile_size - 1),
-                random.randint(0, self._screen.get_width() // self._tile_size - 1),
-            )
-            new_fruit = Fruit(new_position, (255, 0, 0))
-            self.add_object(new_fruit)
+            # Remove the fruit
+            self.remove_object(obj)
 
+            # Create a new fruit
+            self.create_fruit()
 
-class CheckerBoard(GameObject):
-    def __init__(self, size: WindowSize, color1: Tuple[int, int, int], color2: Tuple[int, int, int]) -> None:
-        super().__init__()
-        self._size = size  # Dimensions of the board
-        self._color1 = color1  # Primary color
-        self._color2 = color2  # Secondary color
+    def notify_object_moved(self, obj: GameObject) -> None:
+        """Notify that an object has moved."""
+        # Detect board exit
+        for tile in obj.tiles:
+            if not (0 <= tile.x < self._nb_cols and
+                    0 <= tile.y < self._nb_lines):
+                obj.notify_out_of_board(width = self._nb_cols,
+                                        height = self._nb_lines)
 
-    @property
-    def tiles(self) -> Iterator[Tile]:
-        # Yield tiles with alternating colors
-        for row in range(self._size["height"]):
-            for column in range(self._size["width"]):
-                yield Tile(row=row, column=column, color=self._color1 if (row + column) % 2 == 0 else self._color2)
+        # Detect collisions
+        for o in self.collides(obj):
+            obj.notify_collision(o)
+
+    def collides(self, obj: GameObject) -> typing.Iterator[GameObject]:
+        """Check if an object collides with other objects on the board."""
+        # Loop on all known objects
+        for o in self._objects:
+
+            # Detect a collision
+            if obj != o and not o.is_background() and obj in o:
+                yield o

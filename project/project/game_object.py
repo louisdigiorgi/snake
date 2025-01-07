@@ -1,19 +1,32 @@
-from .observer import Subject
-from .tile import Tile  # Import Tile correctly
-from abc import ABC, abstractmethod  # Import ABC and abstractmethod correctly
-from typing import Iterator
+# Standard
+import abc
+import typing
 
-class GameObject(Subject):
+# First party
+from .observer import Observer
+from .subject import Subject
+from .tile import Tile
+
+
+class GameObject(Subject, Observer, abc.ABC):
+    """Abstract class for all game objects."""
+
     def __init__(self) -> None:
+        """Object initialization."""
         super().__init__()
 
     @property
-    @abstractmethod  # Use the correct abstractmethod decorator from abc
-    def tiles(self) -> Iterator['Tile']:
+    @abc.abstractmethod
+    def tiles(self) -> typing.Iterator[Tile]:
+        """The tiles of the object."""
         raise NotImplementedError
 
-    # Check if a tile exists in the object's tiles
-    def __contains__(self, tile: 'Tile') -> bool:
-        if not isinstance(tile, Tile):
+    def __contains__(self, other: object) -> bool:
+        """Check if an game object intersects with another."""
+        if not isinstance(other, GameObject):
             return False
-        return any(t.row == tile.row and t.column == tile.column for t in self.tiles)
+        return any(t in self.tiles for t in other.tiles)
+
+    def is_background(self) -> bool:
+        """Tell if this object is a background object."""
+        return False

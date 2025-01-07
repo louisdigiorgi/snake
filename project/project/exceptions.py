@@ -1,19 +1,37 @@
-class SnakeException(Exception):
-    def __init__(self, message : str)-> None:
-        super().__init__(message)
+class SnakeException(Exception): # noqa: N818
+    """Exception super-class for all Snake exceptions."""
+
+    def __init__(self, msg: str) -> None:
+        """Object initialization."""
+        super().__init__(msg)
 
 class GameOver(SnakeException):
-    def __init__(self, message : str)-> None:
-        super().__init__(message)
+    """Exception class used to signal game over."""
 
-class SnakeError(SnakeException):
-    def __init__(self, message : str)-> None:
-        super().__init__(message)
+    def __init__(self) -> None:
+        """Object initialization."""
+        super().__init__("Game over!")
+
+class SnakeError(Exception):
+    """Exception super-class for all Snake errors."""
+
+    def __init__(self, msg: str) -> None:
+        """Object initialization."""
+        super().__init__(msg)
 
 class IntRangeError(SnakeError):
-    def __init__(self, name : str, value : int, Vmin : int, Vmax : int)-> None:
-        super().__init__(f"Value {value} of {name} is not between {Vmin} and {Vmax}.")
+    """Exception for integer range error."""
+
+    def __init__(self, label: str, value: int, low: int, high: int) -> None:
+        """Object initialization."""
+        super().__init__(f"{label} value must be between {low} and {high}."
+                         f" {value} is not allowed.")
 
 class ColorError(SnakeError):
-    def __init__(self, color : str, name : str)-> None:
-        super().__init__(f'wrong color {color} for {name}')
+    """Exception for color format error."""
+
+    def __init__(self, color: str) -> None:
+        """Object initialization."""
+        super().__init__(f'Color "{color}" does not respect the HTML'
+                         ' hexadecimal format #rrggbb.')
+

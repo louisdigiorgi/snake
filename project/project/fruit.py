@@ -1,14 +1,39 @@
-from typing import Tuple, Iterator, List
+# Standard
+import random
+import typing
+
+# Third party
+import pygame
+
+# First party
+from .game_object import GameObject
 from .tile import Tile
-from .game_object import GameObject  # Import GameObject correctly
+
 
 class Fruit(GameObject):
-    def __init__(self, position: Tuple[int, int], color: Tuple[int, int, int]) -> None:
+    """A fruit that the snake must eat."""
+
+    color = pygame.Color("black")
+
+    def __init__(self, tile: Tile) -> None:
+        """Object initialization."""
         super().__init__()
-        # Initialize the fruit as a single tile
-        self._tiles: List[Tile] = [Tile(row=position[0], column=position[1], color=color)]
+        self._tiles = [tile]
 
     @property
-    def tiles(self) -> Iterator[Tile]:
-        # Return an iterator over the fruit's tiles
+    def tiles(self) -> typing.Iterator[Tile]:
+        """
+        An iterator on the tiles.
+
+        Note that this object contains only one tile.
+        """
         return iter(self._tiles)
+
+    # Create a Fruit at random position on the board
+    @classmethod
+    def create_random(cls, nb_lines: int, nb_cols: int) -> typing.Self:
+        """Create a random fruit."""
+        random.seed()
+        x = random.randint(0, nb_cols - 1)
+        y = random.randint(0, nb_lines - 1)
+        return cls(Tile(x, y, cls.color))
