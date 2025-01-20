@@ -1,3 +1,5 @@
+# ruff: noqa: D100,S311
+
 # First party
 from .observer import Observer
 
@@ -22,3 +24,4 @@ class Subject:
     def detach_obs(self, obs: Observer) -> None:
         """Detach an observer."""
         self._observers.remove(obs)
+

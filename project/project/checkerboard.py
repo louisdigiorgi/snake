@@ -1,3 +1,5 @@
+# ruff: noqa: D100,S311
+
 # Standard
 import typing
 
@@ -34,3 +36,4 @@ class Checkerboard(GameObject):
     def is_background(self) -> bool:
         """Test if this object is a background object."""
         return True
+

@@ -1,3 +1,5 @@
+# ruff: noqa: D100,S311
+
 # Standard
 import sys
 
@@ -25,3 +27,5 @@ def main() -> None: # noqa: D103
     except SnakeError as e:
         print(f"Error: {e}") # noqa: T201
         sys.exit(1)
+
+

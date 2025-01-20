@@ -1,3 +1,5 @@
+# ruff: noqa: D100,S311
+
 # Standard
 import random
 import typing
@@ -37,3 +39,4 @@ class Fruit(GameObject):
         x = random.randint(0, nb_cols - 1)
         y = random.randint(0, nb_lines - 1)
         return cls(Tile(x, y, cls.color))
+

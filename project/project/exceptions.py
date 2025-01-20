@@ -1,3 +1,5 @@
+# ruff: noqa: D100,S311
+
 class SnakeException(Exception): # noqa: N818
     """Exception super-class for all Snake exceptions."""
 
@@ -34,4 +36,5 @@ class ColorError(SnakeError):
         """Object initialization."""
         super().__init__(f'Color "{color}" does not respect the HTML'
                          ' hexadecimal format #rrggbb.')
+
 

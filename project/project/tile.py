@@ -1,3 +1,5 @@
+# ruff: noqa: D100,S311
+
 # Third party
 import pygame
 

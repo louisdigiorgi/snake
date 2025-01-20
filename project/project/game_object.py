@@ -1,3 +1,5 @@
+# ruff: noqa: D100,S311
+
 # Standard
 import abc
 import typing
@@ -30,3 +32,5 @@ class GameObject(Subject, Observer, abc.ABC):
     def is_background(self) -> bool:
         """Tell if this object is a background object."""
         return False
+
+

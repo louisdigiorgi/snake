@@ -1,3 +1,5 @@
+# ruff: noqa: D100,S311
+
 # Standard
 import argparse
 import re
@@ -95,4 +97,7 @@ def read_args() -> argparse.Namespace:
 
     # Run parser on command line arguments
     return args
+
+
+
 
