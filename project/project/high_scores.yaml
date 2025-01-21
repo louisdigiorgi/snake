@@ -1,0 +1,12 @@
+max_scores: 5
+scores:
+- name: Jack
+  score: 8
+- name: William
+  score: 6
+- name: pkpk
+  score: 3
+- name: okok
+  score: 2
+- name: ' iii'
+  score: 1
