@@ -27,7 +27,7 @@ class Game:
                  snake_head_color: pygame.Color,
                  snake_body_color: pygame.Color,
                  gameover_on_exit: bool,
-                 scores) -> None:
+                 scores, logger) -> None:
         """Object initialization."""
         self._width = width
         self._height = height
@@ -41,22 +41,24 @@ class Game:
         self._new_high_score = None | Score
         self._scores = Scores.load("high_scores.yaml")  # Chargement des scores
         self._player_name = ""  # Store the player's name
+        self._logger = logger
+        self._logger.info("Game initialized.")
+
 
     def _reset_snake(self) -> None:
         """Reset the snake."""
         if self._snake is not None:
             self._board.detach_obs(self._snake)
             self._board.remove_object(self._snake)
+            self._logger.debug("Resetting the snake.")
         self._snake = Snake.create_random(
-            nb_lines=self._height,
-            nb_cols=self._width,
-            length=SK_START_LENGTH,
-            head_color=self._snake_head_color,
-            body_color=self._snake_body_color,
-            gameover_on_exit=self._gameover_on_exit,
+            nb_lines=self._height, nb_cols=self._width,
+            length=SK_START_LENGTH, head_color=self._snake_head_color,
+            body_color=self._snake_body_color, gameover_on_exit=self._gameover_on_exit,
         )
         self._board.add_object(self._snake)
         self._board.attach_obs(self._snake)
+        self._logger.debug("Snake has been created.")
 
     def _init(self) -> None:
         """Initialize the game."""
@@ -136,9 +138,11 @@ class Game:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self._state = State.QUIT
+                self._logger.info("Quit event detected.")
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_q:  # Press 'Q' to quit
                     self._state = State.QUIT
+                    self._logger.warning("Player pressed 'Q' to quit.")
                 match self._state:
                     case State.SCORES:
                         self._process_scores_event(event)
@@ -154,16 +158,22 @@ class Game:
     def start(self) -> None:
         """Start the game."""
         pygame.init()
+        self._logger.info("Pygame initialized.")
         self._init()
         self._state = State.SCORES
+        self._logger.debug("Game state set to SCORES.")
+
         while self._state != State.QUIT:
             self._clock.tick(self._fps)
             self._process_events()
             try:
                 if self._state == State.PLAY:
                     self._snake.move()
+                    self._logger.debug("Snake moved.")
+
             except GameOver:
                 self._state = State.GAMEOVER
+                self._logger.info("Game over state reached.")
                 countdown = self._fps
             self._screen.fill(pygame.Color("black"))
             self._board.draw()
@@ -191,4 +201,5 @@ class Game:
                 case State.INPUT_NAME:
                     self._draw_inputname()
             pygame.display.update()
+        self._logger.info("Game ended. Exiting...")
         pygame.quit()
