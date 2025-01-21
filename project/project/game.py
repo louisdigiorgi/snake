@@ -8,7 +8,7 @@ from .exceptions import GameOver
 from .fruit import Fruit
 from .game_object import GameObject
 from .score import Score
-from .scores import Scores  # Importation des scores
+from .scores import Scores  
 from .snake import Snake
 from .state import State
 
@@ -39,7 +39,7 @@ class Game:
         self._gameover_on_exit = gameover_on_exit
         self._snake = None
         self._new_high_score = None | Score
-        self._scores = Scores.load("high_scores.yaml")  # Chargement des scores
+        self._scores = Scores.load("high_scores.yaml")  # Loading scores
         self._player_name = ""  # Store the player's name
         self._logger = logger
         self._logger.info("Game initialized.")
@@ -72,7 +72,7 @@ class Game:
         Fruit.color = self._fruit_color
         self._board.create_fruit()
 
-        # Load fonts using a direct path to avoid importlib issues
+        # Load fonts 
         font_path = os.path.join(os.path.dirname(__file__), "DejaVuSansMono-Bold.ttf")
         if not os.path.exists(font_path):
             raise FileNotFoundError(f"Font file not found: {font_path}")
@@ -122,15 +122,14 @@ class Game:
     def _process_inputname(self, event: pygame.event.Event) -> None:
         """The player enters his/her name in the ranking list of highscores."""
         if self._new_high_score is not None and event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_RETURN:  # Valider le nom
-                self._player_name = self._new_high_score.name  # Sauvegarder le nom pour les prochaines parties
-                self._scores.add_score(self._new_high_score)  # Ajouter ou mettre à jour le score
-                self._scores.save("high_scores.yaml")  # Sauvegarder les scores
-                self._state = State.SCORES  # Passer à l'écran des scores
-            elif event.key == pygame.K_BACKSPACE:  # Corriger une erreur
+            if event.key == pygame.K_RETURN:  
+                self._player_name = self._new_high_score.name  
+                self._scores.add_score(self._new_high_score)  # Add or refresh the score
+                self._scores.save("high_scores.yaml")  
+                self._state = State.SCORES 
+            elif event.key == pygame.K_BACKSPACE:  
                 self._new_high_score.name = self._new_high_score.name[:-1]
             else:
-                # Ajouter un caractère au nom
                 self._new_high_score.name += event.unicode
 
     def _process_events(self) -> None:
@@ -185,10 +184,8 @@ class Game:
                         score = self._snake.score
                         self._reset_snake()
                         if self._scores.is_highscore(score):
-                            # Si le joueur a déjà un nom, utilisez-le pour le nouveau score
                             default_name = self._player_name if self._player_name else ""
                             self._new_high_score = Score(name=default_name, score=score)
-                            # Passez à l'état INPUT_NAME uniquement si le nom n'a jamais été défini
                             if not self._player_name:
                                 self._state = State.INPUT_NAME
                             else:
